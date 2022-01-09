@@ -778,6 +778,7 @@ usage() {
       '' \
       'Options:' \
       '-h Display this help' \
+      '-b baseurl_prefix' \
       '-r Convert to rocky' \
       '-V Verify switch' \
       '   !! USE WITH CAUTION !!'
@@ -861,6 +862,14 @@ package_swaps() {
         run
         exit
 EOF
+
+    # set baseurl if environment variable rocky_baseurl_prefix is set
+    if [[ -n "$rocky_baseurl_prefix" ]]; then
+        sed -i \
+            -e "s|^#baseurl=https\?://dl.rockylinux.org/\$contentdir/|baseurl=${rocky_baseurl_prefix%/}/|" \
+            -e 's|^mirrorlist=|#mirrorlist=|' \
+            /etc/yum.repos.d/Rocky-*.repo
+    fi
 
     # rocky-repos and rocky-gpg-keys are now installed, so we don't need the
     # key file anymore
@@ -1143,11 +1152,14 @@ establish_gpg_trust () {
 ## End actual work
 
 noopts=0
-while getopts "hrVR" option; do
+while getopts "hb:rVR" option; do
   (( noopts++ ))
   case "$option" in
     h)
       usage
+      ;;
+    b)
+      rocky_baseurl_prefix=${OPTARG}
       ;;
     r)
       convert_to_rocky=true
